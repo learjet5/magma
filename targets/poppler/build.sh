@@ -33,6 +33,11 @@ EXTRA=""
 test -n "$AR" && EXTRA="$EXTRA -DCMAKE_AR=$AR"
 test -n "$RANLIB" && EXTRA="$EXTRA -DCMAKE_RANLIB=$RANLIB"
 
+# AGENT-IMAGE ADAPTATION (Ubuntu 22.04): libfreetype.a's WOFF2 module references
+# BrotliDecoderDecompress; add libbrotli to the final link so pdftoppm /
+# pdfimages / pdf_fuzzer all resolve cleanly.
+export LDFLAGS="$LDFLAGS -lbrotlidec"
+
 cmake "$TARGET/repo" \
   $EXTRA \
   -DCMAKE_BUILD_TYPE=debug \
@@ -57,7 +62,7 @@ cmake "$TARGET/repo" \
   -DFREETYPE_INCLUDE_DIRS="$WORK/include/freetype2" \
   -DFREETYPE_LIBRARY="$WORK/lib/libfreetype.a" \
   -DICONV_LIBRARIES="/usr/lib/x86_64-linux-gnu/libc.so" \
-  -DCMAKE_EXE_LINKER_FLAGS_INIT="$LIBS"
+  -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS $LIBS -fuse-ld=lld"
 make -j$(nproc) poppler poppler-cpp pdfimages pdftoppm
 EXTRA=""
 
